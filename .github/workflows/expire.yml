@@ -1,0 +1,59 @@
+name: expire-share
+
+# 分享链接到期自动下线
+# 触发：2026-09-17 16:03 UTC = 北京时间 2026-09-18 00:03；也支持在 Actions 页面手动 Run workflow 提前下线
+on:
+  schedule:
+    - cron: '3 16 17 9 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Replace page with expired notice
+        run: |
+          cat > index.html <<'HTML'
+          <!doctype html>
+          <html lang="zh-CN">
+          <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <title>分享链接已过期 · 知签报告</title>
+          <style>
+            *{margin:0;padding:0;box-sizing:border-box}
+            body{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+              font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+              background:linear-gradient(160deg,#0B3326,#0E3E2E);color:#EAF3EE;text-align:center}
+            .b{max-width:480px}
+            .l{font-size:52px;margin-bottom:18px}
+            h1{font-size:28px;margin-bottom:14px}
+            p{color:#9FC3B3;font-size:15px;line-height:1.8}
+            .s{margin-top:8px;font-size:13.5px;color:#7FA796}
+          </style>
+          </head>
+          <body>
+            <div class="b">
+              <div class="l">🔒</div>
+              <h1>分享链接已过期</h1>
+              <p>本报告分享链接的有效期至 2026 年 9 月 17 日 23:59，现已到期关闭。</p>
+              <p class="s">如需继续查看，请联系分享者重新获取。</p>
+            </div>
+          </body>
+          </html>
+          HTML
+          rm -f report.pdf
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to update (already expired)."
+          else
+            git commit -m "chore: expire shared report (2026-09-17)"
+            git push
+          fi
